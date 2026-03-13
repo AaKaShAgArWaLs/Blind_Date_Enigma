@@ -113,7 +113,7 @@ export default function TitleScreen({ onStart }) {
           transition={{ duration: 0.8, delay: 1.3 }}
           className="flex flex-col sm:flex-row gap-4 items-center"
         >
-          <motion.button
+          {/* <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowUploader((v) => !v)}
@@ -121,7 +121,7 @@ export default function TitleScreen({ onStart }) {
               glass-card gold-border text-soft-gold hover:gold-border-glow transition-all duration-300"
           >
             {showUploader ? '✕ Cancel' : '📂 Upload CSV'}
-          </motion.button>
+          </motion.button> */}
 
           <motion.button
             whileHover={{ scale: 1.05 }}
