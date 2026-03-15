@@ -10,37 +10,92 @@ export function shuffle(array) {
   return arr
 }
 
+// Keep selected members in one team without exposing any UI toggle.
+// Add exact participant names here.
+const LOCKED_MEMBER_GROUPS = [
+  ['Aakash', 'Rahul'],['Karthik', 'Divya']
+]
+
+const cleanName = (value) => String(value || '').trim()
+
+function buildTeamSizes(total, teamSize) {
+  const count = Math.floor(total / teamSize)
+  const remainder = total % teamSize
+  const sizes = Array(count).fill(teamSize)
+
+  if (remainder === 1 && count > 0) {
+    sizes[sizes.length - 1] = teamSize - 1
+    sizes.push(2)
+  } else if (remainder > 0) {
+    sizes.push(remainder)
+  }
+
+  return sizes.length ? sizes : [total]
+}
+
+function buildUnits(names, lockedGroups) {
+  const participantSet = new Set(names)
+  const used = new Set()
+  const units = []
+
+  for (const rawGroup of lockedGroups) {
+    if (!Array.isArray(rawGroup)) continue
+
+    const group = [...new Set(rawGroup.map(cleanName).filter(Boolean))]
+    const valid =
+      group.length > 1 &&
+      group.every((name) => participantSet.has(name)) &&
+      group.every((name) => !used.has(name))
+
+    if (!valid) continue
+
+    group.forEach((name) => used.add(name))
+    units.push(group)
+  }
+
+  names.forEach((name) => {
+    if (!used.has(name)) units.push([name])
+  })
+
+  return units
+}
+
+function placeUnits(units, sizes) {
+  const teams = sizes.map((size) => ({ members: [], remaining: size }))
+
+  for (const unit of [...shuffle(units)].sort((a, b) => b.length - a.length)) {
+    const target = teams
+      .filter((team) => team.remaining >= unit.length)
+      .sort((a, b) => a.remaining - b.remaining)[0]
+
+    if (!target) return null
+
+    target.members.push(...unit)
+    target.remaining -= unit.length
+  }
+
+  return teams.map(({ members }) => ({ members }))
+}
+
 /**
  * Generates teams from an array of participant names.
  * Team size is 3 or 4 (prefers 4, adjusts remainder).
  */
-export function generateTeams(names, teamSize = 4) {
+export function generateTeams(names, teamSize = 3, options = {}) {
   if (!names || names.length === 0) return []
-  const shuffled = shuffle(names)
-  const teams = []
-  let i = 0
-  const total = shuffled.length
 
-  // Determine group sizes
-  const baseCount = Math.floor(total / teamSize)
-  const remainder = total % teamSize
+  const cleanNames = [...new Set(names.map(cleanName).filter(Boolean))]
+  if (!cleanNames.length) return []
 
-  const sizes = Array(baseCount).fill(teamSize)
-  if (remainder === 1 && baseCount > 0) {
-    sizes[sizes.length - 1] = 3
-    sizes.push(2)
-  } else if (remainder !== 0) {
-    sizes.push(remainder)
-  }
+  const lockedGroups = Array.isArray(options.lockedGroups)
+    ? options.lockedGroups
+    : LOCKED_MEMBER_GROUPS
 
-  for (const size of sizes) {
-    teams.push({
-      members: shuffled.slice(i, i + size),
-    })
-    i += size
-  }
+  const units = buildUnits(cleanNames, lockedGroups)
+  const largestUnit = Math.max(...units.map((u) => u.length), 1)
+  const sizes = buildTeamSizes(cleanNames.length, Math.max(teamSize, largestUnit))
 
-  return teams
+  return placeUnits(units, sizes)
 }
 
 export const SAMPLE_PARTICIPANTS = [
@@ -52,5 +107,6 @@ export const SAMPLE_PARTICIPANTS = [
   'Dhruv', 'Simran', 'Vivek', 'Ritika', 'Mohit', 'Shivani',
   'Aman', 'Tanya', 'Kunal', 'Deepa', 'Harsh', 'Jyoti',
   'Parth', 'Sakshi', 'Akshay', 'Mansi', 'Saurabh', 'Neha',
-  'Abhinav', 'Preeti',
+  'Abhinav', 'Preeti','random'
 ]
+
